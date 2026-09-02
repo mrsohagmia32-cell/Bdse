@@ -4,32 +4,31 @@ from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-# ফ্রন্টএন্ড এবং সার্চ ইন্টারফেসের HTML টেমপ্লেট
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>কাস্টম পাইথন সার্চ ইঞ্জিন</title>
+    <title>কাস্টম ওয়েব সার্চ ইঞ্জিন</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f4f4f9; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
         .container { width: 90%; max-width: 600px; text-align: center; }
         h1 { color: #333; margin-bottom: 20px; }
         .search-box { display: flex; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 30px; overflow: hidden; background: #fff; }
         input[type="text"] { flex: 1; padding: 15px 20px; border: none; outline: none; font-size: 16px; }
-        button { padding: 0 25px; background-color: #28a745; color: white; border: none; cursor: pointer; font-size: 16px; }
-        button:hover { background-color: #218838; }
+        button { padding: 0 25px; background-color: #007bff; color: white; border: none; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
         #results { margin-top: 20px; text-align: left; width: 100%; }
         .result-item { background: #fff; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .result-item a { color: #007bff; text-decoration: none; font-size: 18px; display: block; margin-bottom: 5px; }
+        .result-item a { color: #1a0dab; text-decoration: none; font-size: 18px; display: block; margin-bottom: 5px; }
         .result-item a:hover { text-decoration: underline; }
-        .result-item p { color: #555; margin: 0; font-size: 14px; }
+        .result-item p { color: #4d4d4d; margin: 0; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>সার্ভার-বেসড সার্চ ইঞ্জিন</h1>
+        <h1>আমার সার্চ ইঞ্জিন</h1>
         <form method="GET" action="/" class="search-box">
             <input type="text" name="q" placeholder="যেকোনো কিছু সার্চ করুন..." value="{{ query }}">
             <button type="submit">সার্চ</button>
@@ -57,28 +56,36 @@ def home():
     results = []
     
     if query:
-        # উদাহরণস্বরূপ DuckDuckGo HTML ভার්শন ক্রল করে ডেটা নিয়ে আসা (সরাসরি ইন্টারনেট সোর্স থেকে)
         try:
-            headers = {'User-Agent': 'Mozilla/5.0'}
+            # সঠিক হেডার ব্যবহার করে সার্চ রিকোয়েস্ট পাঠানো
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+            }
             url = f"https://html.duckduckgo.com/html/?q={query}"
             response = requests.get(url, headers=headers)
             
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
+                
+                # DuckDuckGo HTML রেজাল্ট পার্স করা
                 for r in soup.find_all('div', class_='result'):
                     title_tag = r.find('a', class_='result__snippet') or r.find('a', class_='result__url')
                     link_tag = r.find('a', class_='result__url')
+                    snippet_tag = r.find('a', class_='result__snippet')
                     
                     if title_tag:
                         title = title_tag.get_text().strip()
-                        # ইউআরএল বের করা
-                        snippet = r.find('a', class_='result__snippet')
-                        snippet_text = snippet.get_text().strip() if snippet else "বিবরণ পাওয়া যায়নি"
+                        snippet = snippet_tag.get_text().strip() if snippet_tag else "বিবরণ নেই"
                         
+                        # রিয়েল লিংক সংগ্রহ করা
+                        link = "#"
+                        if link_tag and link_tag.has_attr('href'):
+                            link = link_tag['href']
+                            
                         results.append({
                             'title': title,
-                            'url': '#',
-                            'snippet': snippet_text
+                            'url': link,
+                            'snippet': snippet
                         })
         except Exception as e:
             print(f"Error: {e}")
