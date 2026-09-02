@@ -10,7 +10,7 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>কাস্টম ওয়েব সার্চ ইঞ্জিন</title>
+    <title>আমার সার্চ ইঞ্জিন</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f4f4f9; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
         .container { width: 90%; max-width: 600px; text-align: center; }
@@ -28,7 +28,7 @@ HTML_TEMPLATE = """
 </head>
 <body>
     <div class="container">
-        <h1>আমার সার্চ ইঞ্জিন</h1>
+        <h1>সার্চ ইঞ্জিন</h1>
         <form method="GET" action="/" class="search-box">
             <input type="text" name="q" placeholder="যেকোনো কিছু সার্চ করুন..." value="{{ query }}">
             <button type="submit">সার্চ</button>
@@ -38,6 +38,7 @@ HTML_TEMPLATE = """
                 {% for item in results %}
                     <div class="result-item">
                         <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
+                        <p style="color: #006621; font-size: 12px; margin-bottom: 5px;">{{ item.url }}</p>
                         <p>{{ item.snippet }}</p>
                     </div>
                 {% endfor %}
@@ -57,31 +58,23 @@ def home():
     
     if query:
         try:
-            # সঠিক হেডার ব্যবহার করে সার্চ রিকোয়েস্ট পাঠানো
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
-            }
+            # ব্রাউজারের মতো ইউজার এজেন্ট ব্যবহার করে সরাসরি সার্চ পেজ থেকে ডাটা নিয়ে আসা
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
             url = f"https://html.duckduckgo.com/html/?q={query}"
             response = requests.get(url, headers=headers)
             
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
-                
-                # DuckDuckGo HTML রেজাল্ট পার্স করা
                 for r in soup.find_all('div', class_='result'):
-                    title_tag = r.find('a', class_='result__snippet') or r.find('a', class_='result__url')
-                    link_tag = r.find('a', class_='result__url')
-                    snippet_tag = r.find('a', class_='result__snippet')
+                    title_elem = r.find('a', class_='result__snippet') or r.find('a', class_='result__url')
+                    link_elem = r.find('a', class_='result__url')
+                    snippet_elem = r.find('a', class_='result__snippet')
                     
-                    if title_tag:
-                        title = title_tag.get_text().strip()
-                        snippet = snippet_tag.get_text().strip() if snippet_tag else "বিবরণ নেই"
+                    if title_elem:
+                        title = title_elem.get_text().strip()
+                        snippet = snippet_elem.get_text().strip() if snippet_elem else "বিবরণ পাওয়া যায়নি"
+                        link = link_elem['href'] if link_elem and link_elem.has_attr('href') else "#"
                         
-                        # রিয়েল লিংক সংগ্রহ করা
-                        link = "#"
-                        if link_tag and link_tag.has_attr('href'):
-                            link = link_tag['href']
-                            
                         results.append({
                             'title': title,
                             'url': link,
