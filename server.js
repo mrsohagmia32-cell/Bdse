@@ -1,47 +1,38 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const app = express();
+
 const PORT = process.env.PORT || 3000;
+const DATA_FILE = path.join(__dirname, 'posts.json');
 
-// Middleware to parse JSON data
 app.use(express.json());
+app.use(express.static(__dirname));
 
-// Temporary memory database (Can be replaced with MongoDB or PostgreSQL later)
-let playerDatabase = {};
-
-// Root endpoint for health check
-app.get('/', (req, res) => {
-    legends = { status: "Server is running smoothly on Render!" };
-    res.json(legends);
+// পোস্ট পড়ার রুট (গুগল বট এবং ভিজিটরদের জন্য)
+app.get('/api/posts', (req, res) => {
+    if (!fs.existsSync(DATA_FILE)) {
+        return res.json([]);
+    }
+    const data = fs.readFileSync(DATA_FILE, 'utf8');
+    res.json(JSON.parse(data));
 });
 
-// Save or Update Player Game Data
-app.post('/api/player/save', (req, res) => {
-    const { userId, gameData } = req.body;
+// নতুন পোস্ট সেভ করার রুট
+app.post('/api/posts', (req, res) => {
+    const newPost = req.body;
+    let posts = [];
     
-    if (!userId) {
-        return res.status(400).json({ success: false, message: "User ID is required" });
+    if (fs.existsSync(DATA_FILE)) {
+        const data = fs.readFileSync(DATA_FILE, 'utf8');
+        posts = JSON.parse(data);
     }
-
-    playerDatabase[userId] = {
-        ...gameData,
-        lastUpdated: Date.now()
-    };
-
-    console.log(`Data saved for user: ${userId}`);
-    res.json({ success: true, message: "Game data synced successfully." });
-});
-
-// Load Player Game Data
-app.get('/api/player/load/:userId', (req, res) => {
-    const { userId } = req.params;
     
-    if (!playerDatabase[userId]) {
-        return res.status(404).json({ success: false, message: "Player data not found." });
-    }
-
-    res.json({ success: true, data: playerDatabase[userId] });
+    posts.unshift(newPost);
+    fs.writeFileSync(DATA_FILE, JSON.stringify(posts, null, 2));
+    res.json({ success: true, message: "Post published successfully!" });
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
