@@ -1,0 +1,12 @@
+{
+  "name": "public-story-blog",
+  "version": "1.0.0",
+  "description": "Public blog with json storage",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
